@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 export interface Terminal {
   id: string;
   workingDirectory: string;
+  name?: string;
 }
 
 interface TerminalStore {
@@ -11,6 +12,7 @@ interface TerminalStore {
   defaultDirectory: string | null;
   addTerminal: (workingDirectory?: string) => void;
   removeTerminal: (id: string) => void;
+  renameTerminal: (id: string, name: string) => void;
   setDefaultDirectory: (directory: string | null) => void;
 }
 
@@ -35,6 +37,15 @@ export const useTerminalStore = create<TerminalStore>()(
         if (terminals.length <= 1) return;
 
         set({ terminals: terminals.filter((t) => t.id !== id) });
+      },
+
+      renameTerminal: (id: string, name: string) => {
+        const { terminals } = get();
+        set({
+          terminals: terminals.map((t) =>
+            t.id === id ? { ...t, name } : t
+          ),
+        });
       },
 
       setDefaultDirectory: (directory: string | null) => {

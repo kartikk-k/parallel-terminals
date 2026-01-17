@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { useTerminalStore } from '../store/terminalStore';
 import Terminal from './Terminal';
 
@@ -9,6 +10,21 @@ interface TerminalCardProps {
 
 export default function TerminalCard({ terminalId, workingDirectory, isActive }: TerminalCardProps) {
   const removeTerminal = useTerminalStore((state) => state.removeTerminal);
+  const renameTerminal = useTerminalStore((state) => state.renameTerminal);
+  const terminalName = useTerminalStore((state) =>
+    state.terminals.find((t) => t.id === terminalId)?.name
+  );
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [nameInput, setNameInput] = useState(terminalName || 'Terminal');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isRenaming]);
 
   const handleClose = () => {
     // Send destroy signal to main process
@@ -16,16 +32,70 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
     removeTerminal(terminalId);
   };
 
+  const handleRenameStart = () => {
+    setNameInput(terminalName || 'Terminal');
+    setIsRenaming(true);
+  };
+
+  const handleRenameSubmit = () => {
+    const trimmedName = nameInput.trim();
+    if (trimmedName) {
+      renameTerminal(terminalId, trimmedName);
+    }
+    setIsRenaming(false);
+  };
+
+  const handleRenameCancel = () => {
+    setNameInput(terminalName || 'Terminal');
+    setIsRenaming(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleRenameSubmit();
+    } else if (e.key === 'Escape') {
+      handleRenameCancel();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden border-b border-r border-black/20">
       {/* Terminal Header */}
       <div className="flex items-center justify-between px-2 py-2 bg-neutral-700/40 border-b border-black/20">
         <div className="flex items-center gap-2 text-xs text-white/70">
-        <svg xmlns="http://www.w3.org/2000/svg" className='size-3.5' width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><polyline points="2.75 14.25 8 9 2.75 3.75"></polyline><line x1="9.5" y1="14.25" x2="15.25" y2="14.25"></line></g></svg>
-          <span>Terminal</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className='size-3.5' width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><polyline points="2.75 14.25 8 9 2.75 3.75"></polyline><line x1="9.5" y1="14.25" x2="15.25" y2="14.25"></line></g></svg>
+          {isRenaming ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onBlur={handleRenameSubmit}
+              onKeyDown={handleKeyDown}
+              className="bg-neutral-600/50 text-white/90 px-1.5 py-0.5 rounded text-xs outline-none focus:ring-1 focus:ring-white/30"
+              maxLength={30}
+            />
+          ) : (
+            <span
+              onDoubleClick={handleRenameStart}
+              className="cursor-text"
+              title="Double-click to rename"
+            >
+              {terminalName || 'Terminal'}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Rename button */}
+          <button
+            onClick={handleRenameStart}
+            className="opacity-30 hover:opacity-100"
+            title="Rename terminal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M13.7499 2.24988L15.7499 4.24988L6.99988 13H4.99988V10.9999L13.7499 2.24988Z"></path><path d="M12.5 3.5L14.5 5.5"></path></g></svg>
+          </button>
+
           {/* Delete button */}
           <button
             onClick={handleClose}
