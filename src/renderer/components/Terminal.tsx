@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { terminalManager } from '../services/TerminalManager';
+import { TERMINAL_CONFIG } from '../constants';
 import '@xterm/xterm/css/xterm.css';
 
 interface TerminalProps {
@@ -8,51 +9,45 @@ interface TerminalProps {
   isActive: boolean;
 }
 
+/**
+ * Terminal component that wraps xterm.js instance
+ * Handles terminal lifecycle, visibility, and focus management
+ */
 export default function Terminal({ terminalId, workingDirectory, isActive }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isInitializedRef = useRef(false);
 
-  // Create terminal once when component mounts
+  // Create terminal instance once when component mounts
   useEffect(() => {
     if (!containerRef.current || isInitializedRef.current) return;
 
-    console.log(`[Terminal ${terminalId}] Component mounted, creating terminal`);
-
-    // Create terminal through manager
     terminalManager.createTerminal(terminalId, workingDirectory, containerRef.current);
-
     isInitializedRef.current = true;
 
-    // Cleanup only when component truly unmounts (terminal deleted)
+    // Cleanup when component unmounts
     return () => {
-      console.log(`[Terminal ${terminalId}] Component unmounting, destroying terminal`);
       terminalManager.destroyTerminal(terminalId);
     };
-  }, [terminalId]);
+  }, [terminalId, workingDirectory]);
 
-  // Always show terminal, but focus only when active
+  // Show terminal once initialized
   useEffect(() => {
     if (!isInitializedRef.current) return;
-
-    console.log(`[Terminal ${terminalId}] Showing terminal`);
     terminalManager.showTerminal(terminalId);
   }, [terminalId]);
 
-  // Handle focus changes
+  // Handle focus when terminal becomes active
   useEffect(() => {
-    if (!isInitializedRef.current) return;
+    if (!isInitializedRef.current || !isActive) return;
 
-    if (isActive) {
-      console.log(`[Terminal ${terminalId}] Focusing terminal`);
-      setTimeout(() => {
-        // Don't steal focus if user is interacting with an input field
-        const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-          return;
-        }
-        terminalManager.focusTerminal(terminalId);
-      }, 100);
-    }
+    setTimeout(() => {
+      // Don't steal focus if user is interacting with an input field
+      const activeElement = document.activeElement;
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        return;
+      }
+      terminalManager.focusTerminal(terminalId);
+    }, TERMINAL_CONFIG.FOCUS_DELAY);
   }, [isActive, terminalId]);
 
   // Handle resize when active
@@ -63,7 +58,6 @@ export default function Terminal({ terminalId, workingDirectory, isActive }: Ter
       terminalManager.fitTerminal(terminalId);
     };
 
-    // Debounced resize
     let resizeTimeout: number;
     const debouncedResize = () => {
       clearTimeout(resizeTimeout);

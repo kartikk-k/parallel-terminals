@@ -1,9 +1,15 @@
 import { useEffect } from 'react';
 import { useTerminalStore } from './store/terminalStore';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { GRID_LAYOUT } from './constants';
 import Topbar from './components/Topbar';
 import TerminalCard from './components/TerminalCard';
 import './App.css';
 
+/**
+ * Main application component that manages the terminal grid layout
+ * and global keyboard shortcuts
+ */
 export default function App() {
   const terminals = useTerminalStore((state) => state.terminals);
   const addTerminal = useTerminalStore((state) => state.addTerminal);
@@ -19,60 +25,36 @@ export default function App() {
     if (terminals.length === 0) {
       addTerminal();
     }
-  }, []);
+  }, [terminals.length, addTerminal]);
 
   // Set initial active terminal
   useEffect(() => {
     if (terminals.length > 0 && !activeTerminalId) {
       setActiveTerminal(terminals[0].id);
     }
-  }, [terminals.length, activeTerminalId]);
+  }, [terminals.length, activeTerminalId, setActiveTerminal, terminals]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to exit focus mode
-      if (e.key === 'Escape' && focusedTerminalId !== null) {
-        setFocusedTerminal(null);
-      }
-      // Cmd+N for new terminal
-      else if (e.metaKey && e.key === 'n') {
-        e.preventDefault();
-        addTerminal();
-      }
-      // Cmd+Option+ArrowLeft/Right for terminal navigation
-      else if (e.metaKey && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-        e.preventDefault();
-        // Blur any active input to allow terminal to receive focus
-        const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-          (activeElement as HTMLElement).blur();
-        }
-        if (e.key === 'ArrowLeft') {
-          navigateTerminalUp();
-        } else {
-          navigateTerminalDown();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedTerminalId, setFocusedTerminal, addTerminal, navigateTerminalUp, navigateTerminalDown]);
+  // Setup global keyboard shortcuts
+  useKeyboardShortcuts({
+    onNewTerminal: addTerminal,
+    onNavigateLeft: navigateTerminalUp,
+    onNavigateRight: navigateTerminalDown,
+    onExitFocus: () => setFocusedTerminal(null),
+    focusedTerminalId,
+  });
 
   const hasFocusedTerminal = focusedTerminalId !== null;
 
   return (
     <div className="flex flex-col h-screen text-white">
-      {/* Global invisible draggable bar at the top */}
+      {/* Global draggable region for window movement */}
       <div className="fixed top-0 left-0 right-0 h-3 draggable-region z-50 pointer-events-none" />
 
-      {/* Top Bar */}
       <Topbar />
 
       {/* Terminal Grid */}
       <div className="flex-1 overflow-auto relative">
-        {/* Backdrop for focused terminal */}
+        {/* Backdrop overlay when a terminal is focused */}
         {hasFocusedTerminal && (
           <div
             className="fixed inset-0 z-40 bg-white/10 pointer-events-auto animate-in fade-in duration-300"
@@ -83,9 +65,7 @@ export default function App() {
         <div
           className="grid auto-rows-fr"
           style={{
-            gridTemplateColumns: `repeat(${
-              terminals.length === 1 ? 1 : terminals.length <= 2 ? 2 : terminals.length <= 4 ? 2 : 4
-            }, minmax(0, 1fr))`,
+            gridTemplateColumns: `repeat(${GRID_LAYOUT.getColumns(terminals.length)}, minmax(0, 1fr))`,
             minHeight: '100%',
           }}
         >

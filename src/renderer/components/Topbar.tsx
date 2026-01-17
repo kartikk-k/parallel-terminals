@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useTerminalStore } from '../store/terminalStore';
 
+/**
+ * Top bar component with app branding and controls
+ * Includes new terminal button and default directory selector
+ */
 export default function Topbar() {
   const { addTerminal, defaultDirectory, setDefaultDirectory } = useTerminalStore();
   const [isSelectingDirectory, setIsSelectingDirectory] = useState(false);
@@ -12,7 +16,6 @@ export default function Topbar() {
   const handleSelectDirectory = async () => {
     setIsSelectingDirectory(true);
     try {
-      // Use electron dialog to select directory
       const result = await window.electron.ipcRenderer.invoke('dialog:openDirectory');
       if (result && !result.canceled && result.filePaths.length > 0) {
         setDefaultDirectory(result.filePaths[0]);
@@ -77,7 +80,7 @@ export default function Topbar() {
           <button
             onClick={handleSelectDirectory}
             disabled={isSelectingDirectory}
-            className="flex items-center gap-2 px-3 py-1.5 bg-neutral-700/40 hover:bg-neutral-700/60 rounded-lg border border-white/10 transition-colors text-sm text-white/70 hover:text-white/90"
+            className="flex items-center gap-2 px-3 py-1.5 bg-neutral-700/40 hover:bg-neutral-700/60 rounded-lg border border-white/10 transition-colors text-sm text-white/70 hover:text-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg
               className="w-4 h-4"
