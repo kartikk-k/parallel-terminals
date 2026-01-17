@@ -31,7 +31,7 @@ export const useTerminalStore = create<TerminalStore>()(
       activeTerminalId: null,
 
       addTerminal: (workingDirectory?: string) => {
-        const { terminals, defaultDirectory, activeTerminalId } = get();
+        const { terminals, defaultDirectory } = get();
         const newTerminal: Terminal = {
           id: `terminal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           workingDirectory: workingDirectory || defaultDirectory || window.electron.homeDir || '~',
@@ -39,7 +39,7 @@ export const useTerminalStore = create<TerminalStore>()(
         const newTerminals = [...terminals, newTerminal];
         set({
           terminals: newTerminals,
-          activeTerminalId: activeTerminalId || newTerminal.id
+          activeTerminalId: newTerminal.id
         });
       },
 

@@ -35,6 +35,11 @@ export default function App() {
       if (e.key === 'Escape' && focusedTerminalId !== null) {
         setFocusedTerminal(null);
       }
+      // Cmd+N for new terminal
+      else if (e.metaKey && e.key === 'n') {
+        e.preventDefault();
+        addTerminal();
+      }
       // Cmd+Option+ArrowLeft/Right for terminal navigation
       else if (e.metaKey && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         e.preventDefault();
@@ -48,7 +53,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedTerminalId, setFocusedTerminal, navigateTerminalUp, navigateTerminalDown]);
+  }, [focusedTerminalId, setFocusedTerminal, addTerminal, navigateTerminalUp, navigateTerminalDown]);
 
   const hasFocusedTerminal = focusedTerminalId !== null;
 

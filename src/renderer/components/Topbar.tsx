@@ -102,7 +102,7 @@ export default function Topbar() {
         <button
           onClick={handleAddTerminal}
           className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-white/90"
-          title="Add new terminal"
+          title="Add new terminal (⌘N)"
         >
           <svg
             className="w-4 h-4"
@@ -113,6 +113,7 @@ export default function Topbar() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
           </svg>
           <span className="text-sm font-medium">New Terminal</span>
+          <span className="text-xs text-white/50">⌘N</span>
         </button>
       </div>
     </div>
