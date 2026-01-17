@@ -32,6 +32,6 @@ export const GRID_LAYOUT = {
     if (count === 1) return 1;
     if (count <= 2) return 2;
     if (count <= 4) return 2;
-    return 4;
+    return 3;
   },
 } as const;
