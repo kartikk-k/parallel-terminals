@@ -45,6 +45,11 @@ export default function Terminal({ terminalId, workingDirectory, isActive }: Ter
     if (isActive) {
       console.log(`[Terminal ${terminalId}] Focusing terminal`);
       setTimeout(() => {
+        // Don't steal focus if user is interacting with an input field
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+          return;
+        }
         terminalManager.focusTerminal(terminalId);
       }, 100);
     }

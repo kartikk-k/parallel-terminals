@@ -43,6 +43,11 @@ export default function App() {
       // Cmd+Option+ArrowLeft/Right for terminal navigation
       else if (e.metaKey && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         e.preventDefault();
+        // Blur any active input to allow terminal to receive focus
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+          (activeElement as HTMLElement).blur();
+        }
         if (e.key === 'ArrowLeft') {
           navigateTerminalUp();
         } else {

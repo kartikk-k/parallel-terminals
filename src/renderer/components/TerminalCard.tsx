@@ -78,6 +78,11 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
     setActiveTerminal(terminalId);
     // Focus the terminal after a short delay to ensure it's active
     setTimeout(() => {
+      // Don't steal focus if user is interacting with an input field
+      const activeElement = document.activeElement;
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        return;
+      }
       terminalManager.focusTerminal(terminalId);
     }, 50);
   };
