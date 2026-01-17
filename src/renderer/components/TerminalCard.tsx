@@ -11,9 +11,16 @@ interface TerminalCardProps {
 export default function TerminalCard({ terminalId, workingDirectory, isActive }: TerminalCardProps) {
   const removeTerminal = useTerminalStore((state) => state.removeTerminal);
   const renameTerminal = useTerminalStore((state) => state.renameTerminal);
+  const setFocusedTerminal = useTerminalStore((state) => state.setFocusedTerminal);
+  const setActiveTerminal = useTerminalStore((state) => state.setActiveTerminal);
+  const focusedTerminalId = useTerminalStore((state) => state.focusedTerminalId);
+  const activeTerminalId = useTerminalStore((state) => state.activeTerminalId);
   const terminalName = useTerminalStore((state) =>
     state.terminals.find((t) => t.id === terminalId)?.name
   );
+
+  const isFocused = focusedTerminalId === terminalId;
+  const isActiveTerminal = activeTerminalId === terminalId;
 
   const [isRenaming, setIsRenaming] = useState(false);
   const [nameInput, setNameInput] = useState(terminalName || 'Terminal');
@@ -58,8 +65,22 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
     }
   };
 
+  const handleToggleFocus = () => {
+    if (isFocused) {
+      setFocusedTerminal(null);
+    } else {
+      setFocusedTerminal(terminalId);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full overflow-hidden border-b border-r border-black/20">
+    <div
+      className={`flex flex-col h-full overflow-hidden transition-all duration-300 border-r border-white/10 ring ring-inset ${
+        isActiveTerminal ? 'ring-blue-500/80' : 'ring-transparent'
+          
+      }`}
+      onClick={() => setActiveTerminal(terminalId)}
+    >
       {/* Terminal Header */}
       <div className="flex items-center justify-between px-2 py-2 bg-neutral-700/40 border-b border-black/20">
         <div className="flex items-center gap-2 text-xs text-white/70">
@@ -72,7 +93,7 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
               onChange={(e) => setNameInput(e.target.value)}
               onBlur={handleRenameSubmit}
               onKeyDown={handleKeyDown}
-              className="bg-neutral-600/50 text-white/90 px-1.5 py-0.5 rounded text-xs outline-none focus:ring-1 focus:ring-white/30"
+              className="bg-neutral-600/50 text-white/90 px-1.5 rounded text-xs outline-none focus:ring-1 focus:ring-white/30"
               maxLength={30}
             />
           ) : (
@@ -86,14 +107,27 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* Rename button */}
           <button
             onClick={handleRenameStart}
             className="opacity-30 hover:opacity-100"
             title="Rename terminal"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M13.7499 2.24988L15.7499 4.24988L6.99988 13H4.99988V10.9999L13.7499 2.24988Z"></path><path d="M12.5 3.5L14.5 5.5"></path></g></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="m10.411,1.589h0c.759.759.759,1.991,0,2.75l-5.281,5.281c-.249.249-.559.428-.899.518l-3.231.862.862-3.231c.091-.34.269-.65.518-.899L7.661,1.589c.759-.759,1.991-.759,2.75,0Z"></path><line x1="11.25" y1="10.75" x2="7.25" y2="10.75"></line></g></svg>
+          </button>
+
+          {/* Focus button */}
+          <button
+            onClick={handleToggleFocus}
+            className={`opacity-30 hover:opacity-100 transition-all`}
+            title={isFocused ? 'Exit focus mode' : 'Focus terminal'}
+          >
+            {isFocused ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><polyline points="15.25 7.25 10.75 7.25 10.75 2.75"></polyline><line x1="10.75" y1="7.25" x2="15.25" y2="2.75"></line><polyline points="7.25 15.25 7.25 10.75 2.75 10.75"></polyline><line x1="7.25" y1="10.75" x2="2.75" y2="15.25"></line></g></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M1.75,6.75v-2c0-1.105,.895-2,2-2h2"></path><path d="M12.25,2.75h2c1.105,0,2,.895,2,2v2"></path><path d="M16.25,11.25v2c0,1.105-.895,2-2,2h-2"></path><path d="M5.75,15.25H3.75c-1.105,0-2-.895-2-2v-2"></path></g></svg>
+            )}
           </button>
 
           {/* Delete button */}
