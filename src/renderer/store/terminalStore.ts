@@ -22,6 +22,10 @@ interface TerminalStore {
   setDefaultDirectory: (directory: string | null) => void;
 }
 
+/**
+ * Zustand store for managing terminal state
+ * Persists terminals and default directory to localStorage
+ */
 export const useTerminalStore = create<TerminalStore>()(
   persist(
     (set, get) => ({
@@ -30,30 +34,38 @@ export const useTerminalStore = create<TerminalStore>()(
       focusedTerminalId: null,
       activeTerminalId: null,
 
+      /**
+       * Adds a new terminal with the specified or default working directory
+       * Automatically sets the new terminal as active
+       */
       addTerminal: (workingDirectory?: string) => {
         const { terminals, defaultDirectory } = get();
         const newTerminal: Terminal = {
           id: `terminal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           workingDirectory: workingDirectory || defaultDirectory || window.electron.homeDir || '~',
         };
-        const newTerminals = [...terminals, newTerminal];
         set({
-          terminals: newTerminals,
-          activeTerminalId: newTerminal.id
+          terminals: [...terminals, newTerminal],
+          activeTerminalId: newTerminal.id,
         });
       },
 
+      /**
+       * Removes a terminal by ID
+       * Prevents removing the last terminal
+       */
       removeTerminal: (id: string) => {
         const { terminals, activeTerminalId } = get();
-        // Don't allow removing the last terminal
         if (terminals.length <= 1) return;
 
         const newTerminals = terminals.filter((t) => t.id !== id);
-        // If the active terminal was removed, set the active to the first one
         const newActiveId = activeTerminalId === id ? newTerminals[0]?.id || null : activeTerminalId;
         set({ terminals: newTerminals, activeTerminalId: newActiveId });
       },
 
+      /**
+       * Renames a terminal
+       */
       renameTerminal: (id: string, name: string) => {
         const { terminals } = get();
         set({
@@ -63,44 +75,55 @@ export const useTerminalStore = create<TerminalStore>()(
         });
       },
 
+      /**
+       * Sets the focused terminal (fullscreen mode)
+       */
       setFocusedTerminal: (id: string | null) => {
         set({ focusedTerminalId: id });
       },
 
+      /**
+       * Sets the active terminal (receives keyboard input)
+       */
       setActiveTerminal: (id: string | null) => {
         set({ activeTerminalId: id });
       },
 
+      /**
+       * Navigates to the previous terminal
+       * Does not loop - stops at the first terminal
+       */
       navigateTerminalUp: () => {
         const { terminals, activeTerminalId } = get();
         if (terminals.length === 0) return;
 
         const currentIndex = terminals.findIndex((t) => t.id === activeTerminalId);
         if (currentIndex === -1) {
-          // If no active terminal, go to first terminal
           set({ activeTerminalId: terminals[0].id });
         } else if (currentIndex > 0) {
-          // Move to previous terminal (only if not at the start)
           set({ activeTerminalId: terminals[currentIndex - 1].id });
         }
-        // Do nothing if already at the first terminal (currentIndex === 0)
       },
 
+      /**
+       * Navigates to the next terminal
+       * Does not loop - stops at the last terminal
+       */
       navigateTerminalDown: () => {
         const { terminals, activeTerminalId } = get();
         if (terminals.length === 0) return;
 
         const currentIndex = terminals.findIndex((t) => t.id === activeTerminalId);
         if (currentIndex === -1) {
-          // If no active terminal, go to first terminal
           set({ activeTerminalId: terminals[0].id });
         } else if (currentIndex < terminals.length - 1) {
-          // Move to next terminal (only if not at the end)
           set({ activeTerminalId: terminals[currentIndex + 1].id });
         }
-        // Do nothing if already at the last terminal (currentIndex === terminals.length - 1)
       },
 
+      /**
+       * Sets the default directory for new terminals
+       */
       setDefaultDirectory: (directory: string | null) => {
         set({ defaultDirectory: directory });
       },

@@ -1,5 +1,3 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off */
-
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, screen, dialog } from 'electron';
 import * as pty from 'node-pty';
@@ -10,7 +8,10 @@ let mainWindow: BrowserWindow | null = null;
 // Map of terminal sessions by terminalId
 const ptyProcesses = new Map<string, pty.IPty>();
 
-// Terminal IPC handlers
+/**
+ * IPC Handler: Attach to a new terminal session
+ * Creates a new PTY process with the specified working directory
+ */
 ipcMain.on('terminal-attach', async (event, terminalId: string, workingDir?: string) => {
   // Check if process already exists (reattach scenario)
   if (ptyProcesses.has(terminalId)) {
@@ -21,8 +22,6 @@ ipcMain.on('terminal-attach', async (event, terminalId: string, workingDir?: str
     const workingDirectory = workingDir || process.env.HOME || '~';
     const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh');
     const shellArgs = process.platform === 'win32' ? [] : ['-l'];
-
-    console.log(`Creating PTY for terminal ${terminalId} with shell:`, shell, 'in', workingDirectory);
 
     const ptyProcess = pty.spawn(shell, shellArgs, {
       name: 'xterm-256color',
@@ -39,7 +38,6 @@ ipcMain.on('terminal-attach', async (event, terminalId: string, workingDir?: str
     });
 
     ptyProcess.onExit(({ exitCode }) => {
-      console.log(`PTY terminal ${terminalId} exited with code:`, exitCode);
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('terminal-exit', terminalId, exitCode);
       }
@@ -47,7 +45,6 @@ ipcMain.on('terminal-attach', async (event, terminalId: string, workingDir?: str
     });
 
     ptyProcesses.set(terminalId, ptyProcess);
-    console.log(`PTY terminal ${terminalId} created successfully`);
   } catch (error) {
     console.error(`Failed to create PTY terminal ${terminalId}:`, error);
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -56,6 +53,9 @@ ipcMain.on('terminal-attach', async (event, terminalId: string, workingDir?: str
   }
 });
 
+/**
+ * IPC Handler: Send input data to terminal
+ */
 ipcMain.on('terminal-input', (event, terminalId: string, data: string) => {
   const ptyProcess = ptyProcesses.get(terminalId);
   if (ptyProcess) {
@@ -63,6 +63,9 @@ ipcMain.on('terminal-input', (event, terminalId: string, data: string) => {
   }
 });
 
+/**
+ * IPC Handler: Resize terminal dimensions
+ */
 ipcMain.on('terminal-resize', (event, terminalId: string, { cols, rows }: { cols: number; rows: number }) => {
   const ptyProcess = ptyProcesses.get(terminalId);
   if (ptyProcess) {
@@ -74,20 +77,27 @@ ipcMain.on('terminal-resize', (event, terminalId: string, { cols, rows }: { cols
   }
 });
 
+/**
+ * IPC Handler: Detach from terminal (UI component unmounting)
+ */
 ipcMain.on('terminal-detach', (event, terminalId: string) => {
-  // UI component is detaching (unmounting), but PTY process stays alive
+  // UI component is detaching, but PTY process stays alive
 });
 
+/**
+ * IPC Handler: Destroy terminal and kill PTY process
+ */
 ipcMain.on('terminal-destroy', (event, terminalId: string) => {
   const ptyProcess = ptyProcesses.get(terminalId);
   if (ptyProcess) {
     ptyProcess.kill();
     ptyProcesses.delete(terminalId);
-    console.log(`PTY terminal ${terminalId} destroyed`);
   }
 });
 
-// Directory picker handler
+/**
+ * IPC Handler: Open directory picker dialog
+ */
 ipcMain.handle('dialog:openDirectory', async () => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openDirectory'],
@@ -97,12 +107,10 @@ ipcMain.handle('dialog:openDirectory', async () => {
 
 const isDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
-// if (isDebug) {
-//   require('electron-debug').default();
-// }
-
+/**
+ * Creates the main application window
+ */
 const createWindow = async () => {
-
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');
@@ -175,18 +183,17 @@ const createWindow = async () => {
 };
 
 /**
- * Add event listeners...
+ * Application lifecycle event handlers
  */
 
 app.on('window-all-closed', () => {
-  // Respect the OSX convention of having the application in memory even
-  // after all windows have been closed
+  // Respect the OSX convention of keeping the app in memory
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
-// Add uncaught exception handler
+// Error handlers for uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('UNCAUGHT EXCEPTION:', error);
   console.error('Stack trace:', error.stack);
@@ -196,16 +203,14 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
 });
 
-// Single instance lock - prevent multiple instances from opening
+// Single instance lock - prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  // Another instance is already running, quit this one
   app.quit();
 } else {
-  // This is the first/only instance
   app.on('second-instance', (event, commandLine, workingDirectory) => {
-    // Someone tried to run a second instance, we should focus our window
+    // Focus window if user tries to run a second instance
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -217,8 +222,7 @@ if (!gotTheLock) {
     .then(() => {
       createWindow();
       app.on('activate', () => {
-        // On macOS it's common to re-create a window in the app when the
-        // dock icon is clicked and there are no other windows open.
+        // On macOS re-create window when dock icon is clicked
         if (mainWindow === null) createWindow();
       });
     })

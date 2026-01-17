@@ -1,6 +1,7 @@
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
+import { TERMINAL_CONFIG } from '../constants';
 
 interface TerminalInstance {
   xterm: XTerm;
@@ -11,31 +12,35 @@ interface TerminalInstance {
   container: HTMLElement;
 }
 
+/**
+ * Manages xterm.js terminal instances throughout their lifecycle
+ * Handles creation, attachment, visibility, focus, resize, and cleanup
+ */
 class TerminalManager {
   private terminals: Map<string, TerminalInstance> = new Map();
   private dataSubscriptions: Map<string, () => void> = new Map();
   private resizeTimeouts: Map<string, number> = new Map();
 
+  /**
+   * Creates a new terminal instance
+   * @param terminalId - Unique identifier for the terminal
+   * @param workingDirectory - Initial working directory
+   * @param container - DOM element to render the terminal into
+   */
   createTerminal(
     terminalId: string,
     workingDirectory: string,
-    container: HTMLElement,
-    onStatusUpdate?: (status: any) => void
+    container: HTMLElement
   ): void {
     if (this.terminals.has(terminalId)) {
-      // Terminal already exists, just reattach it
-      console.log(`[TerminalManager] Terminal ${terminalId} already exists, reattaching`);
       this.attachTerminal(terminalId, container);
       return;
     }
 
-    console.log(`[TerminalManager] Creating terminal ${terminalId}`);
-
-    // Create xterm instance
     const xterm = new XTerm({
       cursorBlink: true,
-      fontSize: 13,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontSize: TERMINAL_CONFIG.FONT_SIZE,
+      fontFamily: TERMINAL_CONFIG.FONT_FAMILY,
       theme: {
         background: '#1a1a1a00',
         foreground: '#d4d4d4',
@@ -58,38 +63,35 @@ class TerminalManager {
         brightWhite: '#e5e5e5',
       },
       allowProposedApi: true,
-      scrollback: 10000,
+      scrollback: TERMINAL_CONFIG.SCROLLBACK,
     });
 
     const fitAddon = new FitAddon();
     xterm.loadAddon(fitAddon);
 
-    // Create dedicated element for this terminal
     const terminalElement = document.createElement('div');
     terminalElement.className = 'xterm-instance';
     terminalElement.style.width = '100%';
     terminalElement.style.height = '100%';
-    terminalElement.style.display = 'none'; // Hidden by default
+    terminalElement.style.display = 'none';
     container.appendChild(terminalElement);
 
     xterm.open(terminalElement);
 
-    // Try WebGL
+    // Try to enable WebGL for better performance
     let webglAddon: WebglAddon | undefined;
     try {
       webglAddon = new WebglAddon();
       webglAddon.onContextLoss(() => {
-        console.warn(`[TerminalManager] WebGL context lost for ${terminalId}`);
+        webglAddon?.dispose();
       });
       xterm.loadAddon(webglAddon);
-      console.log(`[TerminalManager] WebGL enabled for ${terminalId}`);
     } catch (err) {
-      console.log(`[TerminalManager] Canvas renderer for ${terminalId}`);
+      // Fallback to canvas renderer
     }
 
     fitAddon.fit();
 
-    // Store instance
     this.terminals.set(terminalId, {
       xterm,
       fitAddon,
@@ -99,19 +101,18 @@ class TerminalManager {
       container,
     });
 
-    // Setup IPC handlers
-    this.setupIPCHandlers(terminalId, workingDirectory, xterm, onStatusUpdate);
+    this.setupIPCHandlers(terminalId, workingDirectory, xterm);
   }
 
+  /**
+   * Sets up IPC communication between renderer and main process
+   */
   private setupIPCHandlers(
     terminalId: string,
     workingDirectory: string,
-    xterm: XTerm,
-    onStatusUpdate?: (status: any) => void
+    xterm: XTerm
   ): void {
-    let terminalContent = '';
-
-    // Data handler
+    // Handle incoming data from PTY
     const unsubscribeData = window.electron?.ipcRenderer.on(
       'terminal-data',
       (...args: unknown[]) => {
@@ -120,15 +121,11 @@ class TerminalManager {
 
         if (receivedTerminalId === terminalId) {
           xterm.write(data);
-          terminalContent += data;
-          if (terminalContent.length > 10000) {
-            terminalContent = terminalContent.slice(-10000);
-          }
         }
       }
     );
 
-    // Exit handler
+    // Handle PTY exit
     const unsubscribeExit = window.electron?.ipcRenderer.on(
       'terminal-exit',
       (...args: unknown[]) => {
@@ -140,7 +137,7 @@ class TerminalManager {
       }
     );
 
-    // Input handler
+    // Send user input to PTY
     xterm.onData((data) => {
       window.electron?.ipcRenderer.sendMessage('terminal-input', terminalId, data);
     });
@@ -151,10 +148,13 @@ class TerminalManager {
       if (unsubscribeExit) unsubscribeExit();
     });
 
-    // Attach to PTY with working directory
+    // Attach to PTY process
     window.electron?.ipcRenderer.sendMessage('terminal-attach', terminalId, workingDirectory);
   }
 
+  /**
+   * Attaches an existing terminal to a new container
+   */
   attachTerminal(sessionId: string, container: HTMLElement): void {
     const terminal = this.terminals.get(sessionId);
     if (!terminal) return;
@@ -166,6 +166,9 @@ class TerminalManager {
     terminal.isAttached = true;
   }
 
+  /**
+   * Detaches a terminal from its container without destroying it
+   */
   detachTerminal(sessionId: string): void {
     const terminal = this.terminals.get(sessionId);
     if (!terminal) return;
@@ -176,13 +179,15 @@ class TerminalManager {
     terminal.isAttached = false;
   }
 
+  /**
+   * Shows a terminal and fits it to container size
+   */
   showTerminal(sessionId: string): void {
     const terminal = this.terminals.get(sessionId);
     if (!terminal) return;
 
     terminal.element.style.display = 'block';
 
-    // Fit and scroll on next frames
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (!terminal) return;
@@ -190,7 +195,7 @@ class TerminalManager {
         terminal.xterm.scrollToBottom();
         terminal.xterm.focus();
 
-        // Send resize to PTY
+        // Notify PTY of terminal size
         if (terminal.xterm.rows && terminal.xterm.cols) {
           window.electron?.ipcRenderer.sendMessage('terminal-resize', sessionId, {
             cols: terminal.xterm.cols,
@@ -201,29 +206,36 @@ class TerminalManager {
     });
   }
 
-  focusTerminal(sessionId: string): void {
-    const terminal = this.terminals.get(sessionId);
-    if (!terminal) return;
-    terminal.xterm.focus();
-  }
-
+  /**
+   * Hides a terminal from view
+   */
   hideTerminal(sessionId: string): void {
     const terminal = this.terminals.get(sessionId);
     if (!terminal) return;
     terminal.element.style.display = 'none';
   }
 
+  /**
+   * Gives keyboard focus to a terminal
+   */
+  focusTerminal(sessionId: string): void {
+    const terminal = this.terminals.get(sessionId);
+    if (!terminal) return;
+    terminal.xterm.focus();
+  }
+
+  /**
+   * Fits terminal to its container size
+   */
   fitTerminal(sessionId: string): void {
     const terminal = this.terminals.get(sessionId);
     if (!terminal || !terminal.isAttached) return;
 
-    // Clear any pending resize
     const existingTimeout = this.resizeTimeouts.get(sessionId);
     if (existingTimeout) {
       clearTimeout(existingTimeout);
     }
 
-    // Debounce resize
     const timeout = window.setTimeout(() => {
       if (!terminal) return;
 
@@ -240,39 +252,41 @@ class TerminalManager {
     this.resizeTimeouts.set(sessionId, timeout);
   }
 
+  /**
+   * Destroys a terminal instance and cleans up resources
+   */
   destroyTerminal(sessionId: string): void {
     const terminal = this.terminals.get(sessionId);
     if (!terminal) return;
 
-    console.log(`[TerminalManager] Destroying terminal for session ${sessionId}`);
-
-    // Clear any pending resize
+    // Clear pending resize timeout
     const timeout = this.resizeTimeouts.get(sessionId);
     if (timeout) {
       clearTimeout(timeout);
       this.resizeTimeouts.delete(sessionId);
     }
 
-    // Cleanup subscriptions
+    // Cleanup IPC subscriptions
     const cleanup = this.dataSubscriptions.get(sessionId);
     if (cleanup) cleanup();
     this.dataSubscriptions.delete(sessionId);
 
-    // Detach from PTY
+    // Notify main process
     window.electron?.ipcRenderer.sendMessage('terminal-detach', sessionId);
 
-    // Dispose xterm
+    // Dispose WebGL addon if present
     if (terminal.webglAddon) {
       try {
         terminal.webglAddon.dispose();
       } catch (err) {
-        console.error(`[TerminalManager] WebGL dispose error for ${sessionId}:`, err);
+        // Ignore disposal errors
       }
     }
 
+    // Dispose xterm instance
     terminal.xterm.dispose();
 
-    // Remove element
+    // Remove DOM element
     if (terminal.element.parentElement) {
       terminal.element.parentElement.removeChild(terminal.element);
     }
@@ -280,15 +294,20 @@ class TerminalManager {
     this.terminals.delete(sessionId);
   }
 
+  /**
+   * Checks if a terminal instance exists
+   */
   hasTerminal(sessionId: string): boolean {
     return this.terminals.has(sessionId);
   }
 
+  /**
+   * Gets terminal buffer content as string
+   */
   getTerminalContent(sessionId: string): string | null {
     const terminal = this.terminals.get(sessionId);
     if (!terminal) return null;
 
-    // Get buffer content from xterm
     const buffer = terminal.xterm.buffer.active;
     let content = '';
     for (let i = 0; i < buffer.length; i++) {
@@ -301,5 +320,5 @@ class TerminalManager {
   }
 }
 
-// Singleton instance
+// Export singleton instance
 export const terminalManager = new TerminalManager();
