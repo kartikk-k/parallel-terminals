@@ -1,48 +1,50 @@
-# Parallel Claude
+# Parallel Terminals
 
-A native macOS desktop application for running multiple Claude AI sessions in parallel with integrated terminal, browser preview, and git management.
-
-<br>
-
-## Features
-
-- **Multi-Session Management** - Run multiple Claude AI sessions simultaneously in separate tabs
-- **Integrated Terminal** - Full-featured terminal emulator with xterm.js for each session
-- **Browser Preview** - Built-in browser preview per session for web development
-- **Git Integration** - Real-time git status, diff viewing, and commit functionality
-- **Session Settings** - Configure session names, preview ports, and working directories
-- **Transparent UI** - Native macOS design with backdrop blur effects
-- **Session Persistence** - Sessions and their state are saved and restored across app launches
+A modern, elegant desktop application for managing multiple terminal sessions in a beautiful grid layout. Built with Electron, React, and xterm.js.
 
 <br>
 
-## Prerequisites
+## ✨ Features
+
+- **Grid Layout** - View multiple terminals simultaneously in an adaptive grid
+- **Keyboard Navigation** - Switch between terminals with `⌘⌥←` and `⌘⌥→`
+- **Quick Terminal Creation** - Create new terminals instantly with `⌘N`
+- **Focus Mode** - Fullscreen any terminal for focused work
+- **Terminal Renaming** - Customize terminal names for better organization
+- **Default Directory** - Set a starting directory for all new terminals
+- **Smart Focus Management** - Automatic input focus when switching terminals
+- **Session Persistence** - Your terminals and settings are saved across app restarts
+- **Native macOS Design** - Transparent UI with backdrop blur effects
+
+<br>
+
+## 📸 Preview
+
+![preview.png](preview.png)
+
+<br>
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 - **Node.js** >= 14.x
 - **npm** >= 7.x or **bun**
-- **Claude CLI** - Install from [claude.ai](https://claude.ai)
-  ```bash
-  # Verify Claude CLI is installed
-  claude --version
-  ```
+- **macOS** (currently only macOS is supported)
 
-<br>
-
-## Installation
+### Installation
 
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/your-username/parallel-claude.git
-cd parallel-claude
+git clone https://github.com/your-username/parallel-terminals.git
+cd parallel-terminals
 npm install
 # or
 bun install
 ```
 
-<br>
-
-## Development
+### Development
 
 Start the app in development mode with hot-reload:
 
@@ -58,7 +60,59 @@ The app will automatically:
 
 <br>
 
-## Building for Production
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `⌘N` | Create new terminal |
+| `⌘⌥←` | Navigate to previous terminal |
+| `⌘⌥→` | Navigate to next terminal |
+| `Esc` | Exit focus mode |
+
+<br>
+
+## 🎯 Usage
+
+### Creating Terminals
+
+- Click the **"New Terminal"** button in the top bar
+- Or press `⌘N` to quickly create a new terminal
+- New terminals automatically receive focus
+
+### Navigating Terminals
+
+- **Click** any terminal to make it active
+- **Keyboard navigation**: Use `⌘⌥←` and `⌘⌥→` to switch between terminals
+- Navigation doesn't loop - it stops at the first/last terminal
+
+### Renaming Terminals
+
+- **Double-click** the terminal name in the header
+- Or click the **rename icon** (pencil)
+- Press `Enter` to save or `Esc` to cancel
+
+### Focus Mode
+
+- Click the **focus icon** (expand) on any terminal
+- The terminal expands to fullscreen with a backdrop
+- Press `Esc` or click the backdrop to exit
+- Or click the **collapse icon** to exit focus mode
+
+### Setting Default Directory
+
+- Click **"Set Starting Directory"** in the top bar
+- Select a directory
+- All new terminals will start in this directory
+- Click the **X** to clear the default directory
+
+### Closing Terminals
+
+- Click the **trash icon** on any terminal
+- The last terminal cannot be closed (minimum of 1 terminal)
+
+<br>
+
+## 📦 Building for Production
 
 ### Package for macOS
 
@@ -69,10 +123,10 @@ npm run package
 ```
 
 This creates a distributable `.app` file in `release/build/`:
-- `Parallel Claude.app` - Application bundle
-- `Parallel Claude-{version}-arm64.dmg` - DMG for Apple Silicon
-- `Parallel Claude-{version}-x64.dmg` - DMG for Intel Macs
-- `Parallel Claude-{version}-universal.dmg` - Universal DMG
+- `Parallel Terminals.app` - Application bundle
+- `Parallel Terminals-{version}-arm64.dmg` - DMG for Apple Silicon
+- `Parallel Terminals-{version}-x64.dmg` - DMG for Intel Macs
+- `Parallel Terminals-{version}-universal.dmg` - Universal DMG
 
 ### First Launch
 
@@ -82,127 +136,82 @@ Since the app is not notarized, macOS will show a security warning on first laun
 
 <br>
 
-## Project Structure
+## 🏗️ Project Structure
 
 ```
-parallel-claude/
+parallel-terminals/
 ├── src/
-│   ├── main/                  # Electron main process
-│   │   ├── main.ts           # Main entry point
-│   │   ├── services/         # Backend services
-│   │   │   ├── session.ts    # Session management
-│   │   │   ├── git.ts        # Git operations
-│   │   │   └── storage.ts    # Data persistence
-│   │   └── ipc/              # IPC handlers
-│   │       ├── sessionHandlers.ts
-│   │       └── repositoryHandlers.ts
+│   ├── main/                      # Electron main process
+│   │   ├── main.ts               # Main entry point & IPC handlers
+│   │   ├── preload.ts            # Preload script (context bridge)
+│   │   └── util.ts               # Utility functions
 │   │
-│   └── renderer/              # React app
+│   └── renderer/                  # React app
 │       ├── components/
-│       │   ├── dashboard/    # Main dashboard
-│       │   └── workstation/  # Session workspace
-│       │       ├── terminal/ # Terminal component
-│       │       ├── sidebar/  # Session sidebar
-│       │       └── git-sidebar/ # Git integration
-│       ├── stores/           # Zustand state management
-│       └── types/            # TypeScript types
+│       │   ├── Terminal.tsx      # xterm.js wrapper component
+│       │   ├── TerminalCard.tsx  # Terminal card with controls
+│       │   └── Topbar.tsx        # Top bar with controls
+│       │
+│       ├── services/
+│       │   └── TerminalManager.ts # Terminal lifecycle management
+│       │
+│       ├── store/
+│       │   └── terminalStore.ts  # Zustand state management
+│       │
+│       ├── hooks/
+│       │   └── useKeyboardShortcuts.ts # Keyboard shortcuts hook
+│       │
+│       ├── constants/
+│       │   └── index.ts          # App-wide constants
+│       │
+│       ├── App.tsx               # Main app component
+│       └── index.tsx             # React entry point
 │
-├── assets/                    # Icons and resources
-└── release/                   # Build output
+├── assets/                        # Icons and resources
+└── release/                       # Build output
 ```
 
 <br>
 
-## Key Technologies
+## 🛠️ Key Technologies
 
-- **Electron** - Cross-platform desktop app framework
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **xterm.js** - Terminal emulator
-- **node-pty** - Pseudo-terminal for shells
-- **Zustand** - State management
-- **Tailwind CSS** - Styling
-- **Radix UI** - Accessible UI components
-- **node-git** - Git integration
-- **Webpack** - Module bundler
+- **[Electron](https://www.electronjs.org/)** - Cross-platform desktop app framework
+- **[React 19](https://react.dev/)** - UI framework
+- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
+- **[xterm.js](https://xtermjs.org/)** - Terminal emulator
+- **[node-pty](https://github.com/microsoft/node-pty)** - Pseudo-terminal for shells
+- **[Zustand](https://zustand-demo.pmnd.rs/)** - State management
+- **[Tailwind CSS](https://tailwindcss.com/)** - Styling
+- **[Webpack](https://webpack.js.org/)** - Module bundler
 
 <br>
 
-## Usage
-
-### Creating a Session
-
-1. Click "Add Folder" on the dashboard
-2. Select a project directory
-3. Sessions are automatically created with Claude CLI
-
-### Managing Sessions
-
-- **Switch Sessions**: Click session tabs in the sidebar
-- **Rename Session**: Right-click session → Rename
-- **Session Settings**: Click gear icon in topbar
-  - Configure session name
-  - Set default preview port
-  - View working directory
-
-### Terminal
-
-- Full terminal emulator with shell profile sourcing
-- Supports all standard terminal features
-- Auto-runs `claude` command on session start
-
-### Browser Preview
-
-- Toggle between Terminal/Preview tabs
-- Independent preview per session
-- Configurable preview port per session
-- URLs persist across sessions
-
-### Git Integration
-
-- Real-time git status display
-- View file diffs
-- Stage/unstage files
-- Commit changes
-- Toggle git sidebar with button in topbar
-
-<br>
-
-## Configuration
+## 📁 Configuration
 
 ### Session Data Location
 
-Sessions are stored in:
-```
-~/ParallelClaude/components/branches/session-{id}/
-```
+Terminal sessions and settings are persisted to localStorage in the browser context.
 
 ### Application Data
 
 Application data is stored in:
 ```
-~/Library/Application Support/parallel-claude/
+~/Library/Application Support/parallel-terminals/
 ```
 
 <br>
 
-## Troubleshooting
+## 🐛 Troubleshooting
 
-### Claude CLI Not Found
+### Terminal Not Working
 
-If Claude command is not found in the built app, ensure:
-1. Claude CLI is installed and in your PATH
-2. Your shell profile (`.zshrc`, `.bashrc`) is properly configured
-3. Try restarting the app after installing Claude CLI
-
-### Terminal Issues
-
-If terminal doesn't work properly:
+If terminals don't work properly:
 1. Check that node-pty is properly rebuilt:
    ```bash
-   npm run rebuild-node-pty
+   npm run rebuild
    ```
-2. Verify shell exists: `echo $SHELL`
+2. Verify your shell exists: `echo $SHELL`
+3. Try restarting the app
 
 ### Build Issues
 
@@ -214,18 +223,25 @@ If you encounter build errors:
    npm run build
    ```
 
+### Focus Issues
+
+If terminal input focus isn't working:
+- Try clicking directly on the terminal area
+- Use keyboard shortcuts (`⌘⌥←` / `⌘⌥→`) to switch terminals
+- Ensure you're not in rename mode (press `Esc` to exit)
+
 <br>
 
-## Development Commands
+## 🔧 Development Commands
 
 ```bash
-# Start development
+# Start development with hot-reload
 npm start
 
 # Build for production
 npm run build
 
-# Package app
+# Package the app
 npm run package
 
 # Run linter
@@ -236,25 +252,45 @@ npm run lint:fix
 
 # Rebuild native modules
 npm run rebuild
-
-# Rebuild node-pty specifically
-npm run rebuild-node-pty
 ```
 
 <br>
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Here's how you can help:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code:
+- Follows the existing code style
+- Includes appropriate comments
+- Works on macOS (primary platform)
 
 <br>
 
-## License
+## 🗺️ Roadmap
 
-MIT © Parallel Claude
+- [ ] Windows & Linux support
+- [ ] Custom themes
+- [ ] Terminal splitting (horizontal/vertical)
+- [ ] Terminal search
+- [ ] Export terminal logs
+- [ ] Custom keyboard shortcuts
+- [ ] Terminal groups/workspaces
+- [ ] Session import/export
 
 <br>
 
-## Acknowledgments
 
-Built with [Electron React Boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate)
+## 🙏 Acknowledgments
+
+- Built with [Electron React Boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate)
+- Terminal powered by [xterm.js](https://xtermjs.org/)
+
+<br>
+
