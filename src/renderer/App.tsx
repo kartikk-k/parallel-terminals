@@ -108,7 +108,7 @@ export default function App() {
                     <TerminalCard
                       terminalId={terminal.id}
                       workingDirectory={terminal.workingDirectory}
-                      isActive={true}
+                      isActive={terminal.id === activeTerminalId}
                     />
                   </div>
                 </div>

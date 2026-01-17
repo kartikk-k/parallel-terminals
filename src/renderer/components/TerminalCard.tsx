@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTerminalStore } from '../store/terminalStore';
+import { terminalManager } from '../services/TerminalManager';
 import Terminal from './Terminal';
 
 interface TerminalCardProps {
@@ -73,13 +74,21 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
     }
   };
 
+  const handleCardClick = () => {
+    setActiveTerminal(terminalId);
+    // Focus the terminal after a short delay to ensure it's active
+    setTimeout(() => {
+      terminalManager.focusTerminal(terminalId);
+    }, 50);
+  };
+
   return (
     <div
       className={`flex flex-col h-full overflow-hidden transition-all duration-300 border-r border-white/10 ring ring-inset ${
         isActiveTerminal ? 'ring-blue-500/80' : 'ring-transparent'
-          
+
       }`}
-      onClick={() => setActiveTerminal(terminalId)}
+      onClick={handleCardClick}
     >
       {/* Terminal Header */}
       <div className="flex items-center justify-between px-2 py-2 bg-neutral-700/40 border-b border-black/20">

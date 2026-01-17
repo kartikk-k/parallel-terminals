@@ -188,6 +188,7 @@ class TerminalManager {
         if (!terminal) return;
         terminal.fitAddon.fit();
         terminal.xterm.scrollToBottom();
+        terminal.xterm.focus();
 
         // Send resize to PTY
         if (terminal.xterm.rows && terminal.xterm.cols) {
@@ -198,6 +199,12 @@ class TerminalManager {
         }
       });
     });
+  }
+
+  focusTerminal(sessionId: string): void {
+    const terminal = this.terminals.get(sessionId);
+    if (!terminal) return;
+    terminal.xterm.focus();
   }
 
   hideTerminal(sessionId: string): void {

@@ -30,16 +30,23 @@ export default function Terminal({ terminalId, workingDirectory, isActive }: Ter
     };
   }, [terminalId]);
 
-  // Handle visibility changes
+  // Always show terminal, but focus only when active
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+
+    console.log(`[Terminal ${terminalId}] Showing terminal`);
+    terminalManager.showTerminal(terminalId);
+  }, [terminalId]);
+
+  // Handle focus changes
   useEffect(() => {
     if (!isInitializedRef.current) return;
 
     if (isActive) {
-      console.log(`[Terminal ${terminalId}] Showing terminal`);
-      terminalManager.showTerminal(terminalId);
-    } else {
-      console.log(`[Terminal ${terminalId}] Hiding terminal`);
-      terminalManager.hideTerminal(terminalId);
+      console.log(`[Terminal ${terminalId}] Focusing terminal`);
+      setTimeout(() => {
+        terminalManager.focusTerminal(terminalId);
+      }, 100);
     }
   }, [isActive, terminalId]);
 
@@ -78,7 +85,7 @@ export default function Terminal({ terminalId, workingDirectory, isActive }: Ter
   return (
     <div
       ref={containerRef}
-      className={`w-full h-full p-2 ${isActive ? 'block' : 'hidden'}`}
+      className="w-full h-full p-2"
       style={{ position: 'absolute', inset: 0 }}
     />
   );
