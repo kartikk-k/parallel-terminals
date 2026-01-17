@@ -26,7 +26,7 @@ export default function App() {
   const gridColumns = getGridColumns();
 
   return (
-    <div className="flex flex-col h-screen bg-neutral-900 text-white">
+    <div className="flex flex-col h-screen text-white">
       {/* Global invisible draggable bar at the top */}
       <div className="fixed top-0 left-0 right-0 h-3 draggable-region z-50 pointer-events-none" />
 
@@ -34,9 +34,9 @@ export default function App() {
       <Topbar />
 
       {/* Terminal Grid */}
-      <div className="flex-1 p-2 overflow-auto">
+      <div className="flex-1 overflow-auto">
         <div
-          className="grid gap-2 auto-rows-fr"
+          className="grid auto-rows-fr"
           style={{
             gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
             minHeight: '100%',

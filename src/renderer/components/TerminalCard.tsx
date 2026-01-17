@@ -17,97 +17,43 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
   };
 
   return (
-    <div className="flex flex-col h-full bg-neutral-800/40 rounded-lg overflow-hidden border border-white/10">
+    <div className="flex flex-col h-full overflow-hidden border-b border-r border-black/20">
       {/* Terminal Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-neutral-900/60 border-b border-white/20">
-        <div className="flex items-center gap-2 text-sm text-white/70">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
-          </svg>
+      <div className="flex items-center justify-between px-2 py-2 bg-neutral-700/40 border-b border-black/20">
+        <div className="flex items-center gap-2 text-xs text-white/70">
+        <svg xmlns="http://www.w3.org/2000/svg" className='size-3.5' width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><polyline points="2.75 14.25 8 9 2.75 3.75"></polyline><line x1="9.5" y1="14.25" x2="15.25" y2="14.25"></line></g></svg>
           <span>Terminal</span>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Split button */}
-          <button
-            className="p-1.5 hover:bg-white/10 rounded transition-colors"
-            title="Split terminal"
-          >
-            <svg
-              className="w-4 h-4 text-white/70"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 4h6v16H9V4z" />
-            </svg>
-          </button>
-
           {/* Delete button */}
           <button
             onClick={handleClose}
-            className="p-1.5 hover:bg-red-500/20 rounded transition-colors"
+            className="opacity-30 hover:opacity-100 hover:text-red-500"
             title="Close terminal"
           >
-            <svg
-              className="w-4 h-4 text-white/70 hover:text-red-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-
-          {/* More options */}
-          <button
-            className="p-1.5 hover:bg-white/10 rounded transition-colors"
-            title="More options"
-          >
-            <svg
-              className="w-4 h-4 text-white/70"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="12" cy="12" r="1" fill="currentColor" />
-              <circle cx="12" cy="5" r="1" fill="currentColor" />
-              <circle cx="12" cy="19" r="1" fill="currentColor" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M2.75 4.75H15.25"></path> <path d="M6.75 4.75V2.75C6.75 2.2 7.198 1.75 7.75 1.75H10.25C10.802 1.75 11.25 2.2 11.25 2.75V4.75"></path> <path d="M7.375 8.75L7.59219 13.25"></path> <path d="M10.625 8.75L10.4078 13.25"></path> <path d="M13.6977 7.75L13.35 14.35C13.294 15.4201 12.416 16.25 11.353 16.25H6.64804C5.58404 16.25 4.70703 15.42 4.65103 14.35L4.30334 7.75"></path></g></svg>
           </button>
         </div>
       </div>
 
+{/* path */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-neutral-700/40 text-xs text-white/70 font-mono border-b border-white/40">
+        <div className="flex items-center gap-3">
+          <span title={workingDirectory} className="truncate max-w-xs">
+            {workingDirectory.replace(window.electron.homeDir || '~', '~')}
+          </span>
+        </div>
+      </div>
+
       {/* Terminal Content */}
-      <div className="flex-1 bg-neutral-900/60 relative">
-        <div className="absolute inset-0">
+      <div className="flex-1 relative bg-neutral-900/50">
+        <div className="absolute inset-0 p-1">
           <Terminal
             terminalId={terminalId}
             workingDirectory={workingDirectory}
             isActive={isActive}
           />
-        </div>
-      </div>
-
-      {/* Bottom status bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-neutral-900/60 border-t border-white/20 text-xs text-white/50">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Terminal
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span title={workingDirectory} className="truncate max-w-xs">
-            {workingDirectory.replace(window.electron.homeDir || '~', '~')}
-          </span>
         </div>
       </div>
     </div>

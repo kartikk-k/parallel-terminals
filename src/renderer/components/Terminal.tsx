@@ -78,7 +78,7 @@ export default function Terminal({ terminalId, workingDirectory, isActive }: Ter
   return (
     <div
       ref={containerRef}
-      className={`w-full h-full ${isActive ? 'block' : 'hidden'}`}
+      className={`w-full h-full p-2 ${isActive ? 'block' : 'hidden'}`}
       style={{ position: 'absolute', inset: 0 }}
     />
   );
