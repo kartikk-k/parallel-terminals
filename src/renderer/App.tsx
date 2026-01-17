@@ -35,10 +35,10 @@ export default function App() {
       if (e.key === 'Escape' && focusedTerminalId !== null) {
         setFocusedTerminal(null);
       }
-      // Cmd+Option+ArrowUp/Down for terminal navigation
-      else if (e.metaKey && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      // Cmd+Option+ArrowLeft/Right for terminal navigation
+      else if (e.metaKey && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         e.preventDefault();
-        if (e.key === 'ArrowUp') {
+        if (e.key === 'ArrowLeft') {
           navigateTerminalUp();
         } else {
           navigateTerminalDown();

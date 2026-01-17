@@ -97,9 +97,9 @@ ipcMain.handle('dialog:openDirectory', async () => {
 
 const isDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
-if (isDebug) {
-  require('electron-debug').default();
-}
+// if (isDebug) {
+//   require('electron-debug').default();
+// }
 
 const createWindow = async () => {
 

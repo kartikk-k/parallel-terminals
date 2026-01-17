@@ -76,13 +76,14 @@ export const useTerminalStore = create<TerminalStore>()(
         if (terminals.length === 0) return;
 
         const currentIndex = terminals.findIndex((t) => t.id === activeTerminalId);
-        if (currentIndex === -1 || currentIndex === 0) {
-          // If no active terminal or at the start, go to last terminal
-          set({ activeTerminalId: terminals[terminals.length - 1].id });
-        } else {
-          // Move to previous terminal
+        if (currentIndex === -1) {
+          // If no active terminal, go to first terminal
+          set({ activeTerminalId: terminals[0].id });
+        } else if (currentIndex > 0) {
+          // Move to previous terminal (only if not at the start)
           set({ activeTerminalId: terminals[currentIndex - 1].id });
         }
+        // Do nothing if already at the first terminal (currentIndex === 0)
       },
 
       navigateTerminalDown: () => {
@@ -90,13 +91,14 @@ export const useTerminalStore = create<TerminalStore>()(
         if (terminals.length === 0) return;
 
         const currentIndex = terminals.findIndex((t) => t.id === activeTerminalId);
-        if (currentIndex === -1 || currentIndex === terminals.length - 1) {
-          // If no active terminal or at the end, go to first terminal
+        if (currentIndex === -1) {
+          // If no active terminal, go to first terminal
           set({ activeTerminalId: terminals[0].id });
-        } else {
-          // Move to next terminal
+        } else if (currentIndex < terminals.length - 1) {
+          // Move to next terminal (only if not at the end)
           set({ activeTerminalId: terminals[currentIndex + 1].id });
         }
+        // Do nothing if already at the last terminal (currentIndex === terminals.length - 1)
       },
 
       setDefaultDirectory: (directory: string | null) => {
