@@ -7,32 +7,31 @@ exports.default = async function notarizeMacos(context) {
     return;
   }
 
-  if (process.env.CI !== 'true') {
-    console.warn('Skipping notarizing step. Packaging is not running in CI');
-    return;
-  }
-
-  if (
-    !(
-      'APPLE_ID' in process.env &&
-      'APPLE_ID_PASS' in process.env &&
-      'APPLE_TEAM_ID' in process.env
-    )
-  ) {
-    console.warn(
-      'Skipping notarizing step. APPLE_ID, APPLE_ID_PASS, and APPLE_TEAM_ID env variables must be set',
-    );
+  // Check if notarization is enabled
+  if (!build.mac || !build.mac.notarize) {
+    console.log('Skipping notarization - not configured in package.json');
     return;
   }
 
   const appName = context.packager.appInfo.productFilename;
+  const appPath = `${appOutDir}/${appName}.app`;
 
-  await notarize({
-    tool: 'notarytool',
-    appBundleId: build.appId,
-    appPath: `${appOutDir}/${appName}.app`,
-    appleId: process.env.APPLE_ID,
-    appleIdPassword: process.env.APPLE_ID_PASS,
-    teamId: process.env.APPLE_TEAM_ID,
-  });
+  console.log(`Notarizing ${appName}...`);
+  console.log(`App path: ${appPath}`);
+  console.log(`App Bundle ID: ${build.appId}`);
+
+  try {
+    // Use ONLY keychain profile for notarization
+    await notarize({
+      tool: 'notarytool',
+      appBundleId: build.appId,
+      appPath: appPath,
+      keychainProfile: 'notarization-profile',
+    });
+
+    console.log('✅ Notarization successful!');
+  } catch (error) {
+    console.error('❌ Notarization failed:', error);
+    throw error;
+  }
 };

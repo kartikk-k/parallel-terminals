@@ -1,12 +1,12 @@
 {
-  "name": "parallel-claude",
-  "version": "4.6.0",
-  "description": "Multi-session Claude terminal interface",
+  "name": "parallel-terminals",
+  "version": "1.0.0",
+  "description": "A modern desktop application for managing multiple terminal sessions",
   "license": "MIT",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://github.com/electron-react-boilerplate"
+    "name": "Parallel Terminals",
+    "email": "hello@parallelterminals.com",
+    "url": "https://github.com/your-username/parallel-terminals"
   },
   "main": "./dist/main/main.js",
   "scripts": {
