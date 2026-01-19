@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTerminalStore } from '../store/terminalStore';
+import { useTerminalStore, BORDER_COLOR_OPTIONS, TerminalBorderColor } from '../store/terminalStore';
 import { terminalManager } from '../services/TerminalManager';
 import Terminal from './Terminal';
 
@@ -16,20 +16,25 @@ interface TerminalCardProps {
 export default function TerminalCard({ terminalId, workingDirectory, isActive }: TerminalCardProps) {
   const removeTerminal = useTerminalStore((state) => state.removeTerminal);
   const renameTerminal = useTerminalStore((state) => state.renameTerminal);
+  const setTerminalBorderColor = useTerminalStore((state) => state.setTerminalBorderColor);
   const setFocusedTerminal = useTerminalStore((state) => state.setFocusedTerminal);
   const setActiveTerminal = useTerminalStore((state) => state.setActiveTerminal);
   const focusedTerminalId = useTerminalStore((state) => state.focusedTerminalId);
   const activeTerminalId = useTerminalStore((state) => state.activeTerminalId);
-  const terminalName = useTerminalStore((state) =>
-    state.terminals.find((t) => t.id === terminalId)?.name
+  const terminal = useTerminalStore((state) =>
+    state.terminals.find((t) => t.id === terminalId)
   );
+  const terminalName = terminal?.name;
+  const borderColor = terminal?.borderColor || 'none';
 
   const isFocused = focusedTerminalId === terminalId;
   const isActiveTerminal = activeTerminalId === terminalId;
 
   const [isRenaming, setIsRenaming] = useState(false);
   const [nameInput, setNameInput] = useState(terminalName || 'Terminal');
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus rename input when entering rename mode
   useEffect(() => {
@@ -38,6 +43,22 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
       inputRef.current.select();
     }
   }, [isRenaming]);
+
+  // Close color picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) {
+        setShowColorPicker(false);
+      }
+    };
+
+    if (showColorPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showColorPicker]);
 
   const handleClose = () => {
     window.electron?.ipcRenderer.sendMessage('terminal-destroy', terminalId);
@@ -74,6 +95,15 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
     setFocusedTerminal(isFocused ? null : terminalId);
   };
 
+  const handleColorChange = (color: TerminalBorderColor) => {
+    setTerminalBorderColor(terminalId, color);
+    setShowColorPicker(false);
+  };
+
+  // Get the ring class for the current border color
+  const currentColorOption = BORDER_COLOR_OPTIONS.find((opt) => opt.value === borderColor);
+  const ringClass = currentColorOption?.ringClass || 'ring-transparent';
+
   const handleCardClick = () => {
     setActiveTerminal(terminalId);
     setTimeout(() => {
@@ -88,9 +118,7 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
 
   return (
     <div
-      className={`flex flex-col h-full overflow-hidden transition-all duration-300 border-r border-white/10 ring ring-inset ${
-        isActiveTerminal ? 'ring-blue-500/80' : 'ring-transparent'
-      }`}
+      className={`flex flex-col h-full overflow-hidden transition-all duration-300 border-r border-white/10 ring ring-inset ${ringClass}`}
       onClick={handleCardClick}
     >
       {/* Terminal Header */}
@@ -120,6 +148,53 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Color picker button */}
+          <div className="relative" ref={colorPickerRef}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowColorPicker(!showColorPicker);
+              }}
+              className="opacity-30 hover:opacity-100 flex items-center justify-center"
+              title="Set border color"
+            >
+              <div className={`w-3 h-3 rounded-full border border-white/30 ${
+                borderColor === 'none' ? 'bg-neutral-500' :
+                borderColor === 'blue' ? 'bg-blue-500' :
+                borderColor === 'green' ? 'bg-green-500' :
+                borderColor === 'purple' ? 'bg-purple-500' :
+                borderColor === 'orange' ? 'bg-orange-500' :
+                'bg-pink-500'
+              }`} />
+            </button>
+
+            {/* Color picker dropdown */}
+            {showColorPicker && (
+              <div className="absolute top-full left-0 mt-1 p-2 bg-neutral-800 rounded-lg shadow-lg border border-white/10 z-50 flex gap-1.5">
+                {BORDER_COLOR_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleColorChange(option.value);
+                    }}
+                    className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${
+                      borderColor === option.value ? 'border-white' : 'border-transparent'
+                    } ${
+                      option.value === 'none' ? 'bg-neutral-500' :
+                      option.value === 'blue' ? 'bg-blue-500' :
+                      option.value === 'green' ? 'bg-green-500' :
+                      option.value === 'purple' ? 'bg-purple-500' :
+                      option.value === 'orange' ? 'bg-orange-500' :
+                      'bg-pink-500'
+                    }`}
+                    title={option.label}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Rename button */}
           <button
             onClick={handleRenameStart}

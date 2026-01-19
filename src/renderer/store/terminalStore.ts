@@ -1,10 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type TerminalBorderColor = 'none' | 'blue' | 'green' | 'purple' | 'orange' | 'pink';
+
+export const BORDER_COLOR_OPTIONS: { value: TerminalBorderColor; label: string; ringClass: string }[] = [
+  { value: 'none', label: 'None', ringClass: 'ring-transparent' },
+  { value: 'blue', label: 'Blue', ringClass: 'ring-blue-500/80' },
+  { value: 'green', label: 'Green', ringClass: 'ring-green-500/80' },
+  { value: 'purple', label: 'Purple', ringClass: 'ring-purple-500/80' },
+  { value: 'orange', label: 'Orange', ringClass: 'ring-orange-500/80' },
+  { value: 'pink', label: 'Pink', ringClass: 'ring-pink-500/80' },
+];
+
 export interface Terminal {
   id: string;
   workingDirectory: string;
   name?: string;
+  borderColor?: TerminalBorderColor;
 }
 
 interface TerminalStore {
@@ -15,6 +27,7 @@ interface TerminalStore {
   addTerminal: (workingDirectory?: string) => void;
   removeTerminal: (id: string) => void;
   renameTerminal: (id: string, name: string) => void;
+  setTerminalBorderColor: (id: string, color: TerminalBorderColor) => void;
   setFocusedTerminal: (id: string | null) => void;
   setActiveTerminal: (id: string | null) => void;
   navigateTerminalUp: () => void;
@@ -71,6 +84,18 @@ export const useTerminalStore = create<TerminalStore>()(
         set({
           terminals: terminals.map((t) =>
             t.id === id ? { ...t, name } : t
+          ),
+        });
+      },
+
+      /**
+       * Sets the border color for a terminal (for visual grouping)
+       */
+      setTerminalBorderColor: (id: string, color: TerminalBorderColor) => {
+        const { terminals } = get();
+        set({
+          terminals: terminals.map((t) =>
+            t.id === id ? { ...t, borderColor: color } : t
           ),
         });
       },
