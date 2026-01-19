@@ -26,11 +26,13 @@ class TerminalManager {
    * @param terminalId - Unique identifier for the terminal
    * @param workingDirectory - Initial working directory
    * @param container - DOM element to render the terminal into
+   * @param savedContent - Optional saved content to restore from previous session
    */
   createTerminal(
     terminalId: string,
     workingDirectory: string,
-    container: HTMLElement
+    container: HTMLElement,
+    savedContent?: string
   ): void {
     if (this.terminals.has(terminalId)) {
       this.attachTerminal(terminalId, container);
@@ -100,6 +102,11 @@ class TerminalManager {
       isAttached: true,
       container,
     });
+
+    // Restore saved content if available (before attaching to PTY)
+    if (savedContent) {
+      this.restoreContent(terminalId, savedContent);
+    }
 
     this.setupIPCHandlers(terminalId, workingDirectory, xterm);
   }
@@ -317,6 +324,32 @@ class TerminalManager {
       }
     }
     return content;
+  }
+
+  /**
+   * Restores previously saved content to terminal buffer
+   * Writes content directly to xterm without sending to PTY
+   */
+  restoreContent(sessionId: string, content: string): void {
+    const terminal = this.terminals.get(sessionId);
+    if (!terminal) return;
+
+    // Write the saved content to the terminal display
+    // Use \r\n for proper line endings in terminal
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line || i < lines.length - 1) {
+        terminal.xterm.write(line + (i < lines.length - 1 ? '\r\n' : ''));
+      }
+    }
+  }
+
+  /**
+   * Gets all terminal IDs that have active instances
+   */
+  getAllTerminalIds(): string[] {
+    return Array.from(this.terminals.keys());
   }
 }
 

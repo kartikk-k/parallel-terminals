@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useTerminalStore } from './store/terminalStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { GRID_LAYOUT } from './constants';
+import { terminalManager } from './services/TerminalManager';
 import Topbar from './components/Topbar';
 import TerminalCard from './components/TerminalCard';
 import './App.css';
@@ -19,6 +20,7 @@ export default function App() {
   const setActiveTerminal = useTerminalStore((state) => state.setActiveTerminal);
   const navigateTerminalUp = useTerminalStore((state) => state.navigateTerminalUp);
   const navigateTerminalDown = useTerminalStore((state) => state.navigateTerminalDown);
+  const saveTerminalContent = useTerminalStore((state) => state.saveTerminalContent);
 
   // Initialize with one terminal if none exist
   useEffect(() => {
@@ -33,6 +35,29 @@ export default function App() {
       setActiveTerminal(terminals[0].id);
     }
   }, [terminals.length, activeTerminalId, setActiveTerminal, terminals]);
+
+  // Save terminal content before app quits
+  useEffect(() => {
+    const handleBeforeQuit = () => {
+      // Save all terminal content to persistent storage
+      terminals.forEach((terminal) => {
+        const content = terminalManager.getTerminalContent(terminal.id);
+        if (content) {
+          saveTerminalContent(terminal.id, content);
+        }
+      });
+    };
+
+    const unsubscribe = window.electron?.ipcRenderer.on('app-before-quit', handleBeforeQuit);
+
+    // Also save on browser beforeunload (covers edge cases)
+    window.addEventListener('beforeunload', handleBeforeQuit);
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeQuit);
+    };
+  }, [terminals, saveTerminalContent]);
 
   // Setup global keyboard shortcuts
   useKeyboardShortcuts({
