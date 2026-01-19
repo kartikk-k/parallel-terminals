@@ -20,9 +20,12 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
   const setActiveTerminal = useTerminalStore((state) => state.setActiveTerminal);
   const focusedTerminalId = useTerminalStore((state) => state.focusedTerminalId);
   const activeTerminalId = useTerminalStore((state) => state.activeTerminalId);
-  const terminalName = useTerminalStore((state) =>
-    state.terminals.find((t) => t.id === terminalId)?.name
+  const terminal = useTerminalStore((state) =>
+    state.terminals.find((t) => t.id === terminalId)
   );
+  const terminalName = terminal?.name;
+  const savedContent = terminal?.savedContent;
+  const clearSavedContent = useTerminalStore((state) => state.clearSavedContent);
 
   const isFocused = focusedTerminalId === terminalId;
   const isActiveTerminal = activeTerminalId === terminalId;
@@ -169,6 +172,8 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
             terminalId={terminalId}
             workingDirectory={workingDirectory}
             isActive={isActive}
+            savedContent={savedContent}
+            onContentRestored={() => clearSavedContent(terminalId)}
           />
         </div>
       </div>

@@ -7,13 +7,15 @@ interface TerminalProps {
   terminalId: string;
   workingDirectory: string;
   isActive: boolean;
+  savedContent?: string;
+  onContentRestored?: () => void;
 }
 
 /**
  * Terminal component that wraps xterm.js instance
  * Handles terminal lifecycle, visibility, and focus management
  */
-export default function Terminal({ terminalId, workingDirectory, isActive }: TerminalProps) {
+export default function Terminal({ terminalId, workingDirectory, isActive, savedContent, onContentRestored }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isInitializedRef = useRef(false);
 
@@ -21,8 +23,13 @@ export default function Terminal({ terminalId, workingDirectory, isActive }: Ter
   useEffect(() => {
     if (!containerRef.current || isInitializedRef.current) return;
 
-    terminalManager.createTerminal(terminalId, workingDirectory, containerRef.current);
+    terminalManager.createTerminal(terminalId, workingDirectory, containerRef.current, savedContent);
     isInitializedRef.current = true;
+
+    // Notify that content has been restored so it can be cleared from storage
+    if (savedContent && onContentRestored) {
+      onContentRestored();
+    }
 
     // Cleanup when component unmounts
     return () => {

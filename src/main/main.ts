@@ -193,6 +193,16 @@ app.on('window-all-closed', () => {
   }
 });
 
+/**
+ * Handle before-quit event to save terminal state
+ * Notifies renderer process to save terminal content before quitting
+ */
+app.on('before-quit', (event) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('app-before-quit');
+  }
+});
+
 // Error handlers for uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('UNCAUGHT EXCEPTION:', error);

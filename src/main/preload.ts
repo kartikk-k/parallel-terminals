@@ -9,7 +9,8 @@ export type Channels =
   | 'terminal-resize'
   | 'terminal-destroy'
   | 'terminal-data'
-  | 'terminal-exit';
+  | 'terminal-exit'
+  | 'app-before-quit';
 
 const electronHandler = {
   ipcRenderer: {

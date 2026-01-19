@@ -5,6 +5,7 @@ export interface Terminal {
   id: string;
   workingDirectory: string;
   name?: string;
+  savedContent?: string;
 }
 
 interface TerminalStore {
@@ -20,6 +21,8 @@ interface TerminalStore {
   navigateTerminalUp: () => void;
   navigateTerminalDown: () => void;
   setDefaultDirectory: (directory: string | null) => void;
+  saveTerminalContent: (id: string, content: string) => void;
+  clearSavedContent: (id: string) => void;
 }
 
 /**
@@ -126,6 +129,30 @@ export const useTerminalStore = create<TerminalStore>()(
        */
       setDefaultDirectory: (directory: string | null) => {
         set({ defaultDirectory: directory });
+      },
+
+      /**
+       * Saves terminal buffer content for persistence across restarts
+       */
+      saveTerminalContent: (id: string, content: string) => {
+        const { terminals } = get();
+        set({
+          terminals: terminals.map((t) =>
+            t.id === id ? { ...t, savedContent: content } : t
+          ),
+        });
+      },
+
+      /**
+       * Clears saved content after it has been restored
+       */
+      clearSavedContent: (id: string) => {
+        const { terminals } = get();
+        set({
+          terminals: terminals.map((t) =>
+            t.id === id ? { ...t, savedContent: undefined } : t
+          ),
+        });
       },
     }),
     {
