@@ -225,6 +225,15 @@ class TerminalManager {
   }
 
   /**
+   * Clears the terminal screen and scrollback buffer
+   */
+  clearTerminal(sessionId: string): void {
+    const terminal = this.terminals.get(sessionId);
+    if (!terminal) return;
+    terminal.xterm.clear();
+  }
+
+  /**
    * Fits terminal to its container size
    */
   fitTerminal(sessionId: string): void {
