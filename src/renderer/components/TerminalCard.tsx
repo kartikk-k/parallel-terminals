@@ -86,12 +86,38 @@ export default function TerminalCard({ terminalId, workingDirectory, isActive }:
     }, 50);
   };
 
+  const handleContextMenu = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    const result = await window.electron?.ipcRenderer.invoke('terminal:showContextMenu', terminalId);
+
+    if (!result) return;
+
+    switch (result.action) {
+      case 'clear':
+        terminalManager.clearTerminal(terminalId);
+        break;
+      case 'export': {
+        const content = terminalManager.getTerminalContent(terminalId);
+        if (content) {
+          const defaultName = `${terminalName || 'terminal'}-${new Date().toISOString().slice(0, 10)}.txt`;
+          await window.electron?.ipcRenderer.invoke('terminal:exportContent', content, defaultName);
+        }
+        break;
+      }
+      case 'delete':
+        handleClose();
+        break;
+    }
+  };
+
   return (
     <div
       className={`flex flex-col h-full overflow-hidden transition-all duration-300 border-r border-white/10 ring ring-inset ${
         isActiveTerminal ? 'ring-blue-500/80' : 'ring-transparent'
       }`}
       onClick={handleCardClick}
+      onContextMenu={handleContextMenu}
     >
       {/* Terminal Header */}
       <div className="flex items-center justify-between px-2 py-2 bg-neutral-700/40 border-b border-black/20">

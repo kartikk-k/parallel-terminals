@@ -9,7 +9,9 @@ export type Channels =
   | 'terminal-resize'
   | 'terminal-destroy'
   | 'terminal-data'
-  | 'terminal-exit';
+  | 'terminal-exit'
+  | 'terminal:showContextMenu'
+  | 'terminal:exportContent';
 
 const electronHandler = {
   ipcRenderer: {

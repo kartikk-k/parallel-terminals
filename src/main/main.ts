@@ -1,5 +1,6 @@
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain, screen, dialog } from 'electron';
+import fs from 'fs';
+import { app, BrowserWindow, shell, ipcMain, screen, dialog, Menu } from 'electron';
 import * as pty from 'node-pty';
 import { resolveHtmlPath } from './util';
 
@@ -103,6 +104,59 @@ ipcMain.handle('dialog:openDirectory', async () => {
     properties: ['openDirectory'],
   });
   return result;
+});
+
+/**
+ * IPC Handler: Show terminal context menu
+ */
+ipcMain.handle('terminal:showContextMenu', async (event, terminalId: string) => {
+  return new Promise((resolve) => {
+    const template = [
+      {
+        label: 'Clear',
+        click: () => resolve({ action: 'clear', terminalId }),
+      },
+      { type: 'separator' as const },
+      {
+        label: 'Export as .txt',
+        click: () => resolve({ action: 'export', terminalId }),
+      },
+      { type: 'separator' as const },
+      {
+        label: 'Delete',
+        click: () => resolve({ action: 'delete', terminalId }),
+      },
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    menu.popup({
+      window: mainWindow!,
+      callback: () => {
+        // Menu closed without selection
+        resolve(null);
+      },
+    });
+  });
+});
+
+/**
+ * IPC Handler: Save terminal content to file
+ */
+ipcMain.handle('terminal:exportContent', async (event, content: string, defaultName: string) => {
+  const result = await dialog.showSaveDialog(mainWindow!, {
+    defaultPath: defaultName,
+    filters: [{ name: 'Text Files', extensions: ['txt'] }],
+  });
+
+  if (!result.canceled && result.filePath) {
+    try {
+      fs.writeFileSync(result.filePath, content, 'utf-8');
+      return { success: true, filePath: result.filePath };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+  return { success: false, canceled: true };
 });
 
 const isDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
